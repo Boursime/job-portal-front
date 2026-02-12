@@ -14,6 +14,7 @@ export const Register = () => {
     full_name: "",
     email: "",
     password: "",
+    repeat_password:'',
 
     // Employer fields
     company_name: "",
@@ -45,6 +46,7 @@ export const Register = () => {
       data.append("full_name", form.full_name);
       data.append("email", form.email);
       data.append("password", form.password);
+    data.append("repeat_password", form.repeat_password);
       data.append("role", role);
 
       // Role-based fields
@@ -69,11 +71,11 @@ export const Register = () => {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      alert(res.data.message);
+      console.log(res.data.message);
 
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Register error");
+      console.log(err.response?.data?.message || "Register error");
     } finally {
       setLoading(false);
     }
@@ -126,6 +128,14 @@ export const Register = () => {
           type="password"
           name="password"
           placeholder="Password"
+          onChange={handleChange}
+          className="w-full border p-2 rounded"
+          required
+        />
+        <input
+          type="password"
+          name="repeat_password"
+          placeholder="reapeat Password"
           onChange={handleChange}
           className="w-full border p-2 rounded"
           required

@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import apiClient from "@/services/api";
-import { Forbidden } from "@/pages/system/Forbidden";
 
 const AuthContext = createContext();
 
