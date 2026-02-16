@@ -4,7 +4,7 @@ export const ApplicationHeader = ({
   title, 
   para, 
   placeholder, 
-  handleChange 
+   value,onChange
 }) => {
 
   return (
@@ -27,8 +27,10 @@ export const ApplicationHeader = ({
           <Input
             type="search"
             placeholder={placeholder}
-            onChange={handleChange}
+            value={value}
+            onChange={onChange}
             className="h-11 rounded-xl focus-visible:ring-2 focus-visible:ring-primary capitalize"
+            
           />
         </div>
 

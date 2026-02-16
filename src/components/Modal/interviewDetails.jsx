@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { formatDate, formatTime } from "../../utils/function";
+import { formatDate } from "../../utils/function";
 
 export default function InterviewDetailsModal({ open, setOpen, application }) {
   return (

@@ -3,9 +3,9 @@ import { getMyApplications } from "../api/ApplicationApi";
 
 export const fetchMyApplications = createAsyncThunk(
   "applications/fetchMyApplications",
-  async (userId, { rejectWithValue }) => {
+  async ({userId,search}, { rejectWithValue }) => {
     try {
-      return await getMyApplications(userId);
+      return await getMyApplications(userId,search);
     } catch (err) {
       return rejectWithValue(err);
     }
