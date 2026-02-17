@@ -1,6 +1,6 @@
 import { useState } from "react";
 import apiClient from "@/services/api";
-
+import { Link } from "react-router-dom";
 const ROLES = {
   JOB_SEEKER: "job_seeker",
   EMPLOYER: "employer",
@@ -208,6 +208,12 @@ export const Register = () => {
             </div>
           </>
         )}
+
+        <div className="text-sm mb-2">
+             have you an account?
+          <Link to={"/login"} className="cursor-pointer text-[#7337FF] hover:underline px-2 "
+            >Login</Link>
+        </div>
 
         {/* Submit */}
         <button

@@ -3,11 +3,12 @@ import { useState } from "react";
 import apiClient from "@/services/api";
 import { Link } from "react-router-dom";
 import jobIcon from "@/assets/job.png";
-
+import { useNavigate } from "react-router-dom";
 
 export const Login = () => {
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     email: "",
@@ -25,28 +26,23 @@ export const Login = () => {
   };
 
   // Handle submit
-  const handleLogin = async (e) => {
-    e.preventDefault(); // prevent refresh
-    setLoading(true);
-    setError(null);
+    const handleLogin = async (e) => {
+      e.preventDefault(); // prevent refresh
+      setLoading(true);
+      setError(null);
 
-    try {
-      const result = await apiClient.post("/api/auth/login", form);
-
-      console.log("Login success:", result.data);
-
-      // Example: store token
-      localStorage.setItem("token", result.data.accessToken);
-
-      // redirect if needed
-      window.location.href = "/dashboard";
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Login failed");
-    } finally {
+    apiClient.post("/api/auth/login", form)
+    .then((res) => {
+      navigate("/dashboard");
+    })
+    .catch((err) => {
+      setError(err.message);
+    })
+    .finally(() => {
       setLoading(false);
-    }
-  };
+    });
+
+}
 
   return (
     <>

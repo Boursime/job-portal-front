@@ -40,25 +40,28 @@ apiClient.interceptors.response.use(
     PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1);
     const originalRequest = error.config;
 
-    // Handle 401 Unauthorized (Token expired)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/auth/login")
+    ) {
       originalRequest._retry = true;
 
       try {
-        // Use the refreshClient so this call doesn't trigger the interceptor again
         await refreshClient.get("/api/auth/refresh");
-        
-        // Retry the original request with the new cookie/token
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed (Session truly expired)
-        // Don't redirect here! Let the React Context handle the state change.
-        return Promise.reject(refreshError);
+        return Promise.reject(
+          refreshError.response?.data || { message: "Session expired" }
+        );
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(
+      error.response?.data || { message: error.message }
+    );
   }
 );
+
 
 export default apiClient;
