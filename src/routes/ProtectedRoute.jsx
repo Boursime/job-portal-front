@@ -9,7 +9,7 @@ export const ProtectedRoute = ({role, children }) => {
     return <Loading />;
   }
 
-  if (isAuthenticated) {
+  if (!isAuthenticated) {
     return <Forbidden />;
   }
    if (!role.includes(user?.role)) {
