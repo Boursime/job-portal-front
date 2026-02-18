@@ -9,11 +9,14 @@ import { NotFoundPage } from "@/pages/system/NotFoundPage";
 import {ADMIN,JOB_SEEKER,EMPLOYER} from "@/constants/userRole"
 import { ForgotPassword } from "@/pages/auth/ForgotPassword";
 import { ResetPassword } from "@/pages/auth/ResetPassword";
+
+import Dashboard from "@/pages/Dashboard";
 export default function AppRoutes() {
   return (
     <Routes>
       {/* Puplic page */}
       <Route path="/" element={<Publicpage/>} />
+      <Route path="/dashboard" element={<Dashboard/>} />
       <Route path="/login" element={
                 <GuestRoute>
                     <Login/>
