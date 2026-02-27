@@ -6,9 +6,8 @@ import { SidebarProvider, SidebarTrigger } from "../ui/sidebar"
 
 export const Dashboard = () => {
   const { user } = useAuth()
-  console.log(user)
+ 
   const navigateto = roleNavigateTo[user?.role] || []
-console.log(navigateto)
   return (
    <SidebarProvider>
       <div className="flex min-h-screen w-full">

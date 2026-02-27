@@ -46,8 +46,8 @@ export const Cvs = ({cvs}) => {
               </TableHeader>
 
               <TableBody>
-                {cvs.map((cv) => (
-                  <CvCard key={cv.cv_id} cv={cv} />
+                {cvs.map((cv,index) => (
+                  <CvCard key={index} cv={cv} />
                 ))}
               </TableBody>
             </Table>

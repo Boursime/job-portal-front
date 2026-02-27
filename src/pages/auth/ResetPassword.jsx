@@ -1,7 +1,6 @@
 import { AuthHeader } from "@/components/common/Headers/AuthHeader";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import apiClient from "@/services/api";
-import jobIcon from "@/assets/job.png";
 import { useToast } from "@/components/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +24,7 @@ export const ResetPassword = () => {
     resolver: zodResolver(PasswordSchema),
     defaultValues: {
       password: "",
-      confirmPassword: "",
+      repeat_password: "",
     },
   });
 
@@ -70,16 +69,16 @@ export const ResetPassword = () => {
 
           {/* Confirm Password */}
           <div className="w-full my-2">
-            <Label htmlFor="confirmPassword" className="form-label">Confirm Password</Label>
+            <Label htmlFor="repeat_password" className="form-label">Confirm Password</Label>
             <Input
-              id="confirmPassword"
+              id="repeat_password"
               type="password"
               placeholder="Confirm new password"
-              {...register("confirmPassword")}
+              {...register("repeat_password")}
               className="border p-2 rounded-lg w-full"
             />
             {errors.confirmPassword && (
-              <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.repeat_password.message}</p>
             )}
           </div>
 
