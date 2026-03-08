@@ -15,13 +15,16 @@ import MyApplicationsPage from "@/pages/JobSeeker/MyApplications";
 import { MyCvs } from "@/pages/JobSeeker/MyCvs";
 import ApplyButton from "@/pages/JobSeeker/Apply";
 import { Dashboard } from "@/components/layouts/DashboardLayout";
+import CandidateCardTest from "@/pages/system/CandidateCardTest";
+import ApplicantsPage from "@/pages/Employer/ApplicantsPage";
+import CompanyProfilePage from "@/pages/Employer/CompanyProfilePage";
 
 export default function AppRoutes() {
   return (
     <Routes>
-
       {/* Public */}
       <Route path="/" element={<Publicpage />} />
+      <Route path="/test-candidate-card" element={<CandidateCardTest />} />
 
       {/* Guest */}
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
@@ -30,11 +33,11 @@ export default function AppRoutes() {
       <Route path="/verify-email" element={<MagicLinkPageValidation />} />
       <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
 
-      {/* Dashboard  */}
+      {/* Dashboard Jobseeker */}
       <Route
         path="/jobseeker"
         element={
-          <ProtectedRoute role={[JOB_SEEKER,EMPLOYER,ADMIN]}>
+          <ProtectedRoute role={[JOB_SEEKER, EMPLOYER, ADMIN]}>
             <Dashboard />
           </ProtectedRoute>
         }
@@ -42,11 +45,24 @@ export default function AppRoutes() {
         <Route path="applications" element={<MyApplicationsPage />} />
         <Route path="resumes" element={<MyCvs />} />
         <Route path="apply" element={<ApplyButton />} />
+        <Route path="candidates-test" element={<CandidateCardTest />} />
+      </Route>
+
+      {/* Dashboard Employer */}
+      <Route
+        path="/employer"
+        element={
+          <ProtectedRoute role={[EMPLOYER, ADMIN]}>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="company/profile" element={<CompanyProfilePage />} />
+        <Route path="jobs/:jobId/applicants" element={<ApplicantsPage />} />
       </Route>
 
       {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />
-
     </Routes>
   );
 }
