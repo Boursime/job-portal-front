@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { Publicpage } from "@/pages/Public/Publicpage";
+
 import { Login } from "@/pages/auth/Login";
 import { Register } from "@/pages/auth/Register";
 import { MagicLinkPageValidation } from "@/pages/auth/MagicLinkPageValidation";
@@ -8,6 +9,10 @@ import { GuestRoute } from "./GuestRoute";
 import { NotFoundPage } from "@/pages/system/NotFoundPage";
 import { ForgotPassword } from "@/pages/auth/ForgotPassword";
 import { ResetPassword } from "@/pages/auth/ResetPassword";
+
+//test dounia
+import JobFormPage from "@/pages/Employer/JobFormPage";
+import EmployerPlayground from "@/pages/Public/EmployerPlayground";
 
 import { ADMIN, EMPLOYER, JOB_SEEKER } from "@/constants/userRole";
 
@@ -22,7 +27,6 @@ export default function AppRoutes() {
 
       {/* Public */}
       <Route path="/" element={<Publicpage />} />
-
       {/* Guest */}
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
@@ -30,6 +34,22 @@ export default function AppRoutes() {
       <Route path="/verify-email" element={<MagicLinkPageValidation />} />
       <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
 
+{/* Employer Protected Routes */}
+<Route
+  path="/employer"
+  element={
+    <ProtectedRoute role={[EMPLOYER]}>
+      <Dashboard />
+    </ProtectedRoute>
+  }
+>
+  <Route index element={<EmployerPlayground />} />
+  <Route path="jobs" element={<JobFormPage />} />
+  <Route path="jobs/new" element={<JobFormPage />} />
+  <Route path="jobs/:id" element={<JobFormPage />} />
+  <Route path="jobs/:id/edit" element={<JobFormPage />} />
+  <Route path="published" element={<JobFormPage />} />
+</Route>
       {/* Dashboard  */}
       <Route
         path="/jobseeker"

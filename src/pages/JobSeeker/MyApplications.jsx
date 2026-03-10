@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchMyApplications } from "../../Redux/applicationSlice";
 import ApplicationCard from "../../components/common/cards/applicationCard";
 import { ApplicationHeader } from "../../components/common/Headers/ApplicationHeader";
-import useDebounce from "../../Hooks/useDebounce";
+import useDebounce from "../../hooks/useDebounce";
 import StatusCard from "../../components/common/cards/statusCard";
 
 export default function MyApplicationsPage() {
@@ -21,12 +21,9 @@ export default function MyApplicationsPage() {
   const limit = 10;
   const [debouncedSearch, cancelDebounce] = useDebounce(search.trim(), 500);
 
-
   useEffect(() => {
     if (debouncedSearch.length < 3 && debouncedSearch !== "") return;
-    dispatch(
-      fetchMyApplications({ search: debouncedSearch, page, limit }),
-    );
+    dispatch(fetchMyApplications({ search: debouncedSearch, page, limit }));
     return () => cancelDebounce();
   }, [dispatch, debouncedSearch, page]);
 
@@ -51,7 +48,8 @@ export default function MyApplicationsPage() {
         placeholder="Search by job title or status..."
         value={search}
         onChange={(e) => {
-          setSearch(e.target.value);
+          const val = e && e.target ? e.target.value : "";
+          setSearch(val);
           setPage(1);
         }}
       />
@@ -111,7 +109,6 @@ export default function MyApplicationsPage() {
                 />
               ))}
             </div>
-            
           </div>
         </aside>
       </main>
