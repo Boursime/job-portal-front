@@ -19,6 +19,7 @@ import CandidateCardTest from "@/pages/system/CandidateCardTest";
 import ApplicantsPage from "@/pages/Employer/ApplicantsPage";
 import CompanyProfilePage from "@/pages/Employer/CompanyProfilePage";
 import CompanyProfileEditPage from "@/pages/Employer/CompanyProfileEditPage";
+import EmployerDashboardPage from "@/pages/Employer/EmployerDashboardPage";
 
 export default function AppRoutes() {
   return (
@@ -58,6 +59,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route path="dashboard" element={<EmployerDashboardPage />} />
         <Route path="company/profile" element={<CompanyProfilePage />} />
         <Route path="company/profile/edit" element={<CompanyProfileEditPage />} />
         <Route path="jobs/:jobId/applicants" element={<ApplicantsPage />} />
