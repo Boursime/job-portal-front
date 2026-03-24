@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import CandidateCard from "../../components/candidates/CandidateCard";
 import { getEmployerJobById } from "../../services/employerJobs.service";
 import { getShortlistedApplicantsByJob } from "../../services/employerShortlist.service";
+import { toggleShortlist } from "../../services/shortlist.service";
 
 export default function EmployerShortlistPage() {
   const { jobId } = useParams();
@@ -12,6 +13,7 @@ export default function EmployerShortlistPage() {
   const [shortlistedApplicants, setShortlistedApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shortlistLoadingId, setShortlistLoadingId] = useState(null);
 
   useEffect(() => {
     const fetchShortlist = async () => {
@@ -26,22 +28,26 @@ export default function EmployerShortlistPage() {
 
         setJob(jobRes?.data || null);
 
-        const rawApplicants = shortlistRes?.shortlisted || [];
+        const rawApplicants =
+          shortlistRes?.shortlisted ||
+          shortlistRes?.data ||
+          shortlistRes?.applicants ||
+          [];
 
         const mappedApplicants = rawApplicants.map((app) => ({
           id: app.application_id || app.id,
           applicationId: app.application_id || app.id,
           fullName: app.full_name || "Candidate",
           title: app.email || "Email not provided",
-          location: app.location || "Not provided",
+          location: app.location || "Not specified",
           experienceLevel: app.status || "Shortlisted",
           skills: app.skills || [],
           cvId: app.cv_id || null,
           cvFileName: app.cv_file_name || "cv.pdf",
           lastActive: app.shortlisted_at
-            ? new Date(app.shortlisted_at).toLocaleDateString("fr-FR")
+            ? new Date(app.shortlisted_at).toLocaleDateString("en-GB")
             : app.application_date
-            ? new Date(app.application_date).toLocaleDateString("fr-FR")
+            ? new Date(app.application_date).toLocaleDateString("en-GB")
             : "Date not available",
           status:
             app.matching_score !== null && app.matching_score !== undefined
@@ -54,7 +60,8 @@ export default function EmployerShortlistPage() {
       } catch (err) {
         console.error("Shortlist page error:", err);
         setError(
-          err?.message ||
+          err?.response?.data?.message ||
+            err?.message ||
             "Unable to load the shortlist for this job."
         );
       } finally {
@@ -77,6 +84,27 @@ export default function EmployerShortlistPage() {
       );
     });
   }, [shortlistedApplicants, search]);
+
+  const handleRemoveFromShortlist = async (applicationId) => {
+    try {
+      setShortlistLoadingId(applicationId);
+
+      await toggleShortlist(applicationId, false);
+
+      setShortlistedApplicants((prev) =>
+        prev.filter((candidate) => candidate.applicationId !== applicationId)
+      );
+    } catch (err) {
+      console.error("Remove shortlist error:", err);
+      alert(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Unable to update shortlist."
+      );
+    } finally {
+      setShortlistLoadingId(null);
+    }
+  };
 
   return (
     <div className="min-h-full bg-[#f4f2ee] py-6">
@@ -164,7 +192,16 @@ export default function EmployerShortlistPage() {
           <div className="grid gap-5 xl:grid-cols-[2.2fr_1fr]">
             <div className="space-y-4">
               {filteredApplicants.map((candidate) => (
-                <CandidateCard key={candidate.id} candidate={candidate} />
+                <CandidateCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  onToggleShortlist={() =>
+                    handleRemoveFromShortlist(candidate.applicationId)
+                  }
+                  shortlistLoading={
+                    shortlistLoadingId === candidate.applicationId
+                  }
+                />
               ))}
             </div>
 

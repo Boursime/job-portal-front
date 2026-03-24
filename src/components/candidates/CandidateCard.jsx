@@ -1,8 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import axios from "axios";
-import { toggleShortlist } from "@/services/shortlist.service";
 
-export default function CandidateCard({ candidate }) {
+export default function CandidateCard({
+  candidate,
+  onToggleShortlist,
+  shortlistLoading = false,
+}) {
   const {
     id,
     applicationId,
@@ -15,7 +18,7 @@ export default function CandidateCard({ candidate }) {
     cvFileName,
     lastActive = "Recently active",
     status = "Available",
-    isShortlisted: initialShortlisted = false,
+    isShortlisted = false,
   } = candidate;
 
   const initials = useMemo(() => {
@@ -27,27 +30,6 @@ export default function CandidateCard({ candidate }) {
           .join("")
       : "C";
   }, [fullName]);
-
-  const [isShortlisted, setIsShortlisted] = useState(initialShortlisted);
-  const [shortlistLoading, setShortlistLoading] = useState(false);
-
-  const handleShortlist = async () => {
-    if (!applicationId || shortlistLoading) return;
-
-    try {
-      setShortlistLoading(true);
-
-      const nextValue = !isShortlisted;
-      const res = await toggleShortlist(applicationId, nextValue);
-
-      setIsShortlisted(res?.application?.is_shortlisted ?? nextValue);
-    } catch (err) {
-      console.error("Shortlist error:", err);
-      alert("Unable to update the shortlist.");
-    } finally {
-      setShortlistLoading(false);
-    }
-  };
 
   const handleDownloadCv = async () => {
     if (!cvId) return;
@@ -150,7 +132,7 @@ export default function CandidateCard({ candidate }) {
 
           <div className="hidden shrink-0 flex-col gap-2 md:flex">
             <button
-              onClick={handleShortlist}
+              onClick={() => onToggleShortlist?.()}
               disabled={shortlistLoading}
               className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                 isShortlisted
@@ -198,7 +180,7 @@ export default function CandidateCard({ candidate }) {
 
         <div className="mt-5 flex flex-wrap gap-2 md:hidden">
           <button
-            onClick={handleShortlist}
+            onClick={() => onToggleShortlist?.()}
             disabled={shortlistLoading}
             className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
               isShortlisted
