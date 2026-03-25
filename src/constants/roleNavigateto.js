@@ -10,6 +10,6 @@ export const roleNavigateTo = {
 
 export const roleRedirect = {
   admin: "/admin",
-  employer: "/employer",
-  job_seeker: "/jobseeker",
+  employer: "/employer/dashboard",
+  job_seeker: "/jobseeker/applications",
 };

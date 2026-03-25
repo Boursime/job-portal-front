@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import CandidateCard from "../../components/candidates/CandidateCard";
 import { getApplicantsByJob } from "../../services/employerApplicants.service";
+import { toggleShortlist } from "../../services/shortlist.service";
 
 export default function ApplicantsPage() {
   const { jobId } = useParams();
@@ -10,6 +11,7 @@ export default function ApplicantsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [applicants, setApplicants] = useState([]);
+  const [shortlistLoadingId, setShortlistLoadingId] = useState(null);
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -38,7 +40,9 @@ export default function ApplicantsPage() {
           skills: [],
           cvId: app.cv_id,
           cvFileName: app.cv_file_name,
-          lastActive: new Date(app.application_date).toLocaleDateString("fr-FR"),
+          lastActive: app.application_date
+            ? new Date(app.application_date).toLocaleDateString("en-GB")
+            : "Not available",
           status:
             app.matching_score !== null
               ? `AI Score: ${app.matching_score}`
@@ -49,7 +53,11 @@ export default function ApplicantsPage() {
         setApplicants(mappedApplicants);
       } catch (err) {
         console.error(err);
-        setError("Unable to load applicants.");
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Unable to load applicants."
+        );
       } finally {
         setLoading(false);
       }
@@ -69,6 +77,31 @@ export default function ApplicantsPage() {
       );
     });
   }, [applicants, search]);
+
+  const handleToggleShortlist = async (applicationId, currentValue) => {
+    try {
+      setShortlistLoadingId(applicationId);
+
+      await toggleShortlist(applicationId, !currentValue);
+
+      setApplicants((prev) =>
+        prev.map((candidate) =>
+          candidate.applicationId === applicationId
+            ? { ...candidate, isShortlisted: !currentValue }
+            : candidate
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Unable to update shortlist."
+      );
+    } finally {
+      setShortlistLoadingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] py-8">
@@ -111,32 +144,58 @@ export default function ApplicantsPage() {
             </div>
 
             {loading && (
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm text-sm text-slate-600">
+              <div className="rounded-[28px] border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
                 Loading applicants...
               </div>
             )}
 
             {error && (
-              <div className="rounded-[28px] border border-red-200 bg-white p-5 shadow-sm text-sm text-red-600">
+              <div className="rounded-[28px] border border-red-200 bg-white p-5 text-sm text-red-600 shadow-sm">
                 {error}
               </div>
             )}
 
-            {!loading && !error && filteredApplicants.length === 0 && (
+            {!loading && !error && applicants.length === 0 && (
               <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  No applicants found
+                  No applicants yet
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  No candidate matches your current search.
+                  No one has applied to this job yet.
                 </p>
               </div>
             )}
 
             {!loading &&
               !error &&
+              applicants.length > 0 &&
+              filteredApplicants.length === 0 && (
+                <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    No applicants found
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    No candidate matches your current search.
+                  </p>
+                </div>
+              )}
+
+            {!loading &&
+              !error &&
               filteredApplicants.map((candidate) => (
-                <CandidateCard key={candidate.id} candidate={candidate} />
+                <CandidateCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  onToggleShortlist={() =>
+                    handleToggleShortlist(
+                      candidate.applicationId,
+                      candidate.isShortlisted
+                    )
+                  }
+                  shortlistLoading={
+                    shortlistLoadingId === candidate.applicationId
+                  }
+                />
               ))}
           </div>
 
