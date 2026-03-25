@@ -102,6 +102,7 @@ export default function AppRoutes() {
     </ProtectedRoute>
   }
 >
+  <Route index element={<Navigate to="/employer/dashboard" replace />} />
   <Route path="dashboard" element={<EmployerDashboardPage />} />
   <Route path="company/profile" element={<CompanyProfilePage />} />
   <Route path="company/profile/edit" element={<CompanyProfileEditPage />} />
@@ -111,6 +112,7 @@ export default function AppRoutes() {
   <Route path="jobs/:jobId/edit" element={<EditJobPage />} />
   <Route path="jobs/:jobId/applicants" element={<ApplicantsPage />} />
   <Route path="jobs/:jobId/shortlist" element={<EmployerShortlistPage />} />
+  <Route path="candidate/:id" element={<ProfilePage readOnly />} />
 </Route>
 
 {/* AJOUT ICI */}

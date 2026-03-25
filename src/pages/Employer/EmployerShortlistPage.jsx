@@ -30,6 +30,15 @@ export default function EmployerShortlistPage() {
 
         const mappedApplicants = rawApplicants.map((app) => ({
           id: app.application_id || app.id,
+          candidateId:
+            app.job_seeker_id ??
+            app.jobSeekerId ??
+            app.user_id ??
+            app.userId ??
+            app.candidate_id ??
+            app.candidateId ??
+            app.id ??
+            app.application_id,
           applicationId: app.application_id || app.id,
           fullName: app.full_name || "Candidate",
           title: app.email || "Email not provided",

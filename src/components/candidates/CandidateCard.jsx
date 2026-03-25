@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toggleShortlist } from "@/services/shortlist.service";
 
 export default function CandidateCard({ candidate }) {
   const {
     id,
+    candidateId,
     applicationId,
     fullName,
     title,
@@ -30,6 +32,7 @@ export default function CandidateCard({ candidate }) {
 
   const [isShortlisted, setIsShortlisted] = useState(initialShortlisted);
   const [shortlistLoading, setShortlistLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleShortlist = async () => {
     if (!applicationId || shortlistLoading) return;
@@ -76,6 +79,15 @@ export default function CandidateCard({ candidate }) {
       console.error("Download CV error:", err);
       alert("Unable to download the CV. Please make sure you are logged in.");
     }
+  };
+
+  const handleViewProfile = () => {
+    const targetId = candidateId ?? id;
+    if (!targetId) {
+      alert("Candidate profile id not available.");
+      return;
+    }
+    navigate(`/employer/candidate/${targetId}`);
   };
 
   const statusStyle =
@@ -248,7 +260,7 @@ export default function CandidateCard({ candidate }) {
         <button
           className="font-semibold text-[#0a66c2] transition hover:underline"
           type="button"
-          onClick={() => alert("To be connected later: candidate profile page")}
+          onClick={handleViewProfile}
         >
           View Profile
         </button>

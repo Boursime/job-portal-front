@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import apiClient from "@/services/api";
 import { fetchProfile, updateProfileThunk, uploadPictureThunk } from "@/Redux/profileSlice";
 import { fetchMySkills, fetchAllSkills, addSkillThunk, removeSkillThunk, createSkillThunk } from "@/Redux/skillSlice";
 import { fetchExperiences, addExperienceThunk, updateExperienceThunk, deleteExperienceThunk } from "@/Redux/experienceSlice";
@@ -75,7 +77,9 @@ const Field = ({ label, value, onChange, type = "text", disabled = false }) => (
 
 const Divider = () => <div className="h-px bg-slate-100 my-3" />;
 
-export default function ProfilePage() {
+export default function ProfilePage({ readOnly = false }) {
+  const { id: candidateId } = useParams();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, loading } = useSelector((s) => s.profile);
   const { mySkills, allSkills } = useSelector((s) => s.skills);
@@ -99,8 +103,37 @@ export default function ProfilePage() {
   const [newSkillName, setNewSkillName] = useState("");
   const [newSkillCategory, setNewSkillCategory] = useState("");
 
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteError, setRemoteError] = useState("");
+  const [remoteUser, setRemoteUser] = useState(null);
+  const [remoteSkills, setRemoteSkills] = useState([]);
+  const [remoteExperiences, setRemoteExperiences] = useState([]);
+  const [remoteEducations, setRemoteEducations] = useState([]);
+  const [remoteLanguages, setRemoteLanguages] = useState([]);
+  const [remoteCertifications, setRemoteCertifications] = useState([]);
+
   useEffect(() => {
     const load = async () => {
+      if (readOnly && candidateId) {
+        try {
+          setRemoteLoading(true);
+          setRemoteError("");
+          const res = await apiClient.get(`/api/employer/candidates/${candidateId}`);
+          setRemoteUser(res.data?.user || null);
+          setRemoteSkills(res.data?.skills || []);
+          setRemoteExperiences(res.data?.experiences || []);
+          setRemoteEducations(res.data?.educations || []);
+          setRemoteLanguages(res.data?.languages || []);
+          setRemoteCertifications(res.data?.certifications || []);
+        } catch (err) {
+          console.error("Candidate profile error:", err);
+          setRemoteError(err?.response?.data?.message || "Unable to load candidate profile.");
+        } finally {
+          setRemoteLoading(false);
+        }
+        return;
+      }
+
       await dispatch(fetchProfile());
       await dispatch(fetchMySkills());
       await dispatch(fetchAllSkills());
@@ -110,13 +143,26 @@ export default function ProfilePage() {
       await dispatch(fetchCertifications());
     };
     load();
-  }, [dispatch]);
+  }, [dispatch, readOnly, candidateId]);
 
-  useEffect(() => { if (user) setForm({ full_name: user.full_name || "" }); }, [user]);
+  useEffect(() => {
+    const activeUser = readOnly && candidateId ? remoteUser : user;
+    if (activeUser) setForm({ full_name: activeUser.full_name || "" });
+  }, [user, remoteUser, readOnly, candidateId]);
+  useEffect(() => { if (readOnly && editMode) setEditMode(false); }, [readOnly, editMode]);
 
-  const handleSaveProfile = () => { dispatch(updateProfileThunk(form)); setEditMode(false); };
-  const handlePicture = (e) => { const f = e.target.files[0]; if (f) dispatch(uploadPictureThunk(f)); };
+  const handleSaveProfile = () => {
+    if (readOnly) return;
+    dispatch(updateProfileThunk(form));
+    setEditMode(false);
+  };
+  const handlePicture = (e) => {
+    if (readOnly) return;
+    const f = e.target.files[0];
+    if (f) dispatch(uploadPictureThunk(f));
+  };
   const handleCreateSkill = () => {
+    if (readOnly) return;
     if (!newSkillName || !newSkillCategory) return;
     dispatch(createSkillThunk({ name: newSkillName, category: newSkillCategory })).then((res) => {
       if (!res.error) {
@@ -129,28 +175,64 @@ export default function ProfilePage() {
     });
   };
 
-  const openEditExp = (exp) => { setExpForm({ ...exp }); setExpModal(exp); };
-  const openAddExp = () => { setExpForm(EMPTY_EXP); setExpModal("add"); };
+  const openEditExp = (exp) => {
+    if (readOnly) return;
+    setExpForm({ ...exp });
+    setExpModal(exp);
+  };
+  const openAddExp = () => {
+    if (readOnly) return;
+    setExpForm(EMPTY_EXP);
+    setExpModal("add");
+  };
   const handleSaveExp = () => {
+    if (readOnly) return;
     if (expModal === "add") dispatch(addExperienceThunk(expForm));
     else dispatch(updateExperienceThunk({ id: expModal.id, payload: expForm }));
     setExpModal(null);
   };
 
-  const openEditEdu = (edu) => { setEduForm({ ...edu }); setEduModal(edu); };
-  const openAddEdu = () => { setEduForm(EMPTY_EDU); setEduModal("add"); };
+  const openEditEdu = (edu) => {
+    if (readOnly) return;
+    setEduForm({ ...edu });
+    setEduModal(edu);
+  };
+  const openAddEdu = () => {
+    if (readOnly) return;
+    setEduForm(EMPTY_EDU);
+    setEduModal("add");
+  };
   const handleSaveEdu = () => {
+    if (readOnly) return;
     if (eduModal === "add") dispatch(addEducationThunk(eduForm));
     else dispatch(updateEducationThunk({ id: eduModal.id, payload: eduForm }));
     setEduModal(null);
   };
 
-  const openAddLang = () => { setLangForm(EMPTY_LANG); setLangModal("add"); };
-  const handleSaveLang = () => { dispatch(addLanguageThunk(langForm)); setLangModal(null); };
+  const openAddLang = () => {
+    if (readOnly) return;
+    setLangForm(EMPTY_LANG);
+    setLangModal("add");
+  };
+  const handleSaveLang = () => {
+    if (readOnly) return;
+    dispatch(addLanguageThunk(langForm));
+    setLangModal(null);
+  };
 
-  const openAddCert = () => { setCertForm(EMPTY_CERT); setCertFile(null); setCertModal("add"); };
-  const openEditCert = (cert) => { setCertForm({ ...cert }); setCertModal(cert); };
+  const openAddCert = () => {
+    if (readOnly) return;
+    setCertForm(EMPTY_CERT);
+    setCertFile(null);
+    setCertModal("add");
+  };
+  const openEditCert = (cert) => {
+    if (readOnly) return;
+    setCertForm({ ...cert });
+    setCertModal(cert);
+  };
   const handleSaveCert = () => {
+    if (readOnly) return;
     if (certModal === "add") {
       const fd = new FormData();
       Object.entries(certForm).forEach(([k, v]) => { if (v) fd.append(k, v); });
@@ -164,13 +246,29 @@ export default function ProfilePage() {
     setCertModal(null);
   };
 
-  const mySkillIds = mySkills.map((s) => s.id);
+  const displayUser = readOnly && candidateId ? remoteUser : user;
+  const displaySkills = readOnly && candidateId ? remoteSkills : mySkills;
+  const displayExperiences = readOnly && candidateId ? remoteExperiences : experiences;
+  const displayEducations = readOnly && candidateId ? remoteEducations : educations;
+  const displayLanguages = readOnly && candidateId ? remoteLanguages : languages;
+  const displayCertifications = readOnly && candidateId ? remoteCertifications : certifications;
+  const mySkillIds = displaySkills.map((s) => s.id);
 
-  if (loading && !user) return (
+  if ((readOnly && candidateId ? remoteLoading : loading) && !displayUser) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin" />
     </div>
   );
+
+  if (readOnly && candidateId && remoteError) {
+    return (
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="rounded-2xl border border-red-200 bg-white p-5 text-sm text-red-600 shadow-sm">
+          {remoteError}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-5 p-6">
@@ -180,33 +278,45 @@ export default function ProfilePage() {
         <div className="h-28 bg-gradient-to-r from-blue-500 to-sky-400 mb-3" />
         <div className="px-6 pb-5 -mt-10 flex items-end justify-between gap-4 flex-wrap">
           <div className="flex items-end gap-4">
-            <Avatar user={user} />
+            {readOnly && candidateId && (
+              <button
+                type="button"
+                onClick={() => navigate("/employer/dashboard")}
+                className="mr-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                title="Back to Dashboard"
+              >
+                ← Back
+              </button>
+            )}
+            <Avatar user={displayUser} />
             <div className="mb-1">
-              <h1 className="text-lg font-bold text-slate-900">{user?.full_name}</h1>
+              <h1 className="text-lg font-bold text-slate-900">{displayUser?.full_name}</h1>
               <p className="text-sm text-slate-500">
-                {user?.role && <span className="capitalize">{user.role.replace("_", " ")} • </span>}
+                {displayUser?.role && <span className="capitalize">{displayUser.role.replace("_", " ")} • </span>}
                 <Mail size={11} className="inline mr-1" />
-                {user?.email}
+                {displayUser?.email}
               </p>
             </div>
           </div>
-          <div className="flex gap-2 mb-1">
-            <label className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors">
-              <Camera size={13} /> Change Photo
-              <input type="file" accept="image/*" className="hidden" onChange={handlePicture} />
-            </label>
-            <button
-              onClick={() => editMode ? handleSaveProfile() : setEditMode(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              {editMode ? <><Check size={13} /> Save</> : <><Pencil size={13} /> Edit Profile</>}
-            </button>
-            {editMode && (
-              <button onClick={() => setEditMode(false)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                Cancel
+          {!readOnly && (
+            <div className="flex gap-2 mb-1">
+              <label className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors">
+                <Camera size={13} /> Change Photo
+                <input type="file" accept="image/*" className="hidden" onChange={handlePicture} />
+              </label>
+              <button
+                onClick={() => editMode ? handleSaveProfile() : setEditMode(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                {editMode ? <><Check size={13} /> Save</> : <><Pencil size={13} /> Edit Profile</>}
               </button>
-            )}
-          </div>
+              {editMode && (
+                <button onClick={() => setEditMode(false)} className="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                  Cancel
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -219,23 +329,25 @@ export default function ProfilePage() {
           {/* Personal Info */}
           <Card>
             <SectionHeader icon={User} title="Personal Information" />
-            <Field label="Full Name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} disabled={!editMode} />
-            <Field label="Email" value={user?.email || ""} disabled />
-            <Field label="Role" value={user?.role?.replace("_", " ") || ""} disabled />
+            <Field label="Full Name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} disabled={readOnly || !editMode} />
+            <Field label="Email" value={displayUser?.email || ""} disabled />
+            <Field label="Role" value={displayUser?.role?.replace("_", " ") || ""} disabled />
           </Card>
 
           {/* Skills */}
           <Card>
-            <SectionHeader icon={Star} title="Skills & Expertise" onAdd={() => setSkillOpen(true)} />
-            {mySkills.length === 0
+            <SectionHeader icon={Star} title="Skills & Expertise" onAdd={readOnly ? undefined : () => setSkillOpen(true)} />
+            {displaySkills.length === 0
               ? <p className="text-xs text-slate-400 italic">No skills added yet.</p>
               : <div className="flex flex-wrap gap-1.5">
-                  {mySkills.map((skill) => (
+                  {displaySkills.map((skill) => (
                     <span key={skill.id} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold group">
                       {skill.name}
-                      <button onClick={() => dispatch(removeSkillThunk(skill.id))} className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-red-500 transition-opacity">
-                        <X size={10} />
-                      </button>
+                      {!readOnly && (
+                        <button onClick={() => dispatch(removeSkillThunk(skill.id))} className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-red-500 transition-opacity">
+                          <X size={10} />
+                        </button>
+                      )}
                     </span>
                   ))}
                 </div>
@@ -244,19 +356,21 @@ export default function ProfilePage() {
 
           {/* Languages */}
           <Card>
-            <SectionHeader icon={Globe} title="Languages" onAdd={openAddLang} />
-            {languages.length === 0
+            <SectionHeader icon={Globe} title="Languages" onAdd={readOnly ? undefined : openAddLang} />
+            {displayLanguages.length === 0
               ? <p className="text-xs text-slate-400 italic">No languages added yet.</p>
               : <div className="space-y-3">
-                  {languages.map((lang) => (
+                  {displayLanguages.map((lang) => (
                     <div key={lang.id} className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-slate-800">{lang.language}</p>
                         <p className="text-xs text-slate-400">{lang.level}</p>
                       </div>
-                      <button onClick={() => dispatch(deleteLanguageThunk(lang.id))} className="text-slate-300 hover:text-red-500 transition-colors">
-                        <Trash2 size={13} />
-                      </button>
+                      {!readOnly && (
+                        <button onClick={() => dispatch(deleteLanguageThunk(lang.id))} className="text-slate-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -269,11 +383,11 @@ export default function ProfilePage() {
 
           {/* Experience */}
           <Card>
-            <SectionHeader icon={Briefcase} title="Work Experience" onAdd={openAddExp} />
-            {experiences.length === 0
+            <SectionHeader icon={Briefcase} title="Work Experience" onAdd={readOnly ? undefined : openAddExp} />
+            {displayExperiences.length === 0
               ? <p className="text-xs text-slate-400 italic">No experience added yet.</p>
               : <div className="space-y-4">
-                  {experiences.map((exp, idx) => (
+                  {displayExperiences.map((exp, idx) => (
                     <div key={exp.id}>
                       {idx > 0 && <Divider />}
                       <div className="flex gap-3 group">
@@ -292,10 +406,12 @@ export default function ProfilePage() {
                                 {exp.start_date?.slice(0, 7)} — {exp.end_date ? exp.end_date?.slice(0, 7) : "Present"}
                               </p>
                             </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                              <button onClick={() => openEditExp(exp)} className="text-slate-400 hover:text-blue-600 p-1 rounded-lg"><Pencil size={13} /></button>
-                              <button onClick={() => dispatch(deleteExperienceThunk(exp.id))} className="text-slate-400 hover:text-red-500 p-1 rounded-lg"><Trash2 size={13} /></button>
-                            </div>
+                            {!readOnly && (
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                <button onClick={() => openEditExp(exp)} className="text-slate-400 hover:text-blue-600 p-1 rounded-lg"><Pencil size={13} /></button>
+                                <button onClick={() => dispatch(deleteExperienceThunk(exp.id))} className="text-slate-400 hover:text-red-500 p-1 rounded-lg"><Trash2 size={13} /></button>
+                              </div>
+                            )}
                           </div>
                           {exp.description && <p className="text-xs text-slate-500 mt-2 leading-relaxed">{exp.description}</p>}
                         </div>
@@ -308,11 +424,11 @@ export default function ProfilePage() {
 
           {/* Education */}
           <Card>
-            <SectionHeader icon={GraduationCap} title="Education" onAdd={openAddEdu} />
-            {educations.length === 0
+            <SectionHeader icon={GraduationCap} title="Education" onAdd={readOnly ? undefined : openAddEdu} />
+            {displayEducations.length === 0
               ? <p className="text-xs text-slate-400 italic">No education added yet.</p>
               : <div className="space-y-4">
-                  {educations.map((edu, idx) => (
+                  {displayEducations.map((edu, idx) => (
                     <div key={edu.id}>
                       {idx > 0 && <Divider />}
                       <div className="flex items-start justify-between gap-2 group">
@@ -324,10 +440,12 @@ export default function ProfilePage() {
                             <span className="text-xs text-slate-400">{edu.start_date?.slice(0, 7)} — {edu.end_date?.slice(0, 7)}</span>
                           </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <button onClick={() => openEditEdu(edu)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={13} /></button>
-                          <button onClick={() => dispatch(deleteEducationThunk(edu.id))} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={13} /></button>
-                        </div>
+                        {!readOnly && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button onClick={() => openEditEdu(edu)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={13} /></button>
+                            <button onClick={() => dispatch(deleteEducationThunk(edu.id))} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={13} /></button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -337,11 +455,11 @@ export default function ProfilePage() {
 
           {/* Certifications */}
           <Card>
-            <SectionHeader icon={BadgeCheck} title="Certifications" onAdd={openAddCert} />
-            {certifications.length === 0
+            <SectionHeader icon={BadgeCheck} title="Certifications" onAdd={readOnly ? undefined : openAddCert} />
+            {displayCertifications.length === 0
               ? <p className="text-xs text-slate-400 italic">No certifications added yet.</p>
               : <div className="space-y-4">
-                  {certifications.map((cert, idx) => {
+                  {displayCertifications.map((cert, idx) => {
                     const fileUrl = cert.certif_path
                       ? `http://localhost:5000/uploaded_files/${cert.certif_path.split("uploaded_files/")[1] || cert.certif_path}`
                       : null;
@@ -386,10 +504,12 @@ export default function ProfilePage() {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                <button onClick={() => openEditCert(cert)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={13} /></button>
-                                <button onClick={() => dispatch(deleteCertificationThunk(cert.id))} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={13} /></button>
-                              </div>
+                              {!readOnly && (
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                  <button onClick={() => openEditCert(cert)} className="text-slate-400 hover:text-blue-600 p-1"><Pencil size={13} /></button>
+                                  <button onClick={() => dispatch(deleteCertificationThunk(cert.id))} className="text-slate-400 hover:text-red-500 p-1"><Trash2 size={13} /></button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -403,7 +523,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Skill Modal ── */}
-      {skillOpen && (
+      {!readOnly && skillOpen && (
         <Modal title="Manage Skills" onClose={() => setSkillOpen(false)}>
           <div className="bg-blue-50 border border-dashed border-blue-200 rounded-xl p-3 mb-4">
             <p className="text-xs font-semibold text-blue-700 mb-2 uppercase tracking-wide">Create New Skill</p>
@@ -437,7 +557,7 @@ export default function ProfilePage() {
       )}
 
       {/* ── Experience Modal ── */}
-      {expModal && (
+      {!readOnly && expModal && (
         <Modal title={expModal === "add" ? "Add Experience" : "Edit Experience"} onClose={() => setExpModal(null)}>
           <Field label="Job Title *" value={expForm.job_title} onChange={(e) => setExpForm({ ...expForm, job_title: e.target.value })} />
           <Field label="Company *" value={expForm.company_name} onChange={(e) => setExpForm({ ...expForm, company_name: e.target.value })} />
@@ -457,7 +577,7 @@ export default function ProfilePage() {
       )}
 
       {/* ── Education Modal ── */}
-      {eduModal && (
+      {!readOnly && eduModal && (
         <Modal title={eduModal === "add" ? "Add Education" : "Edit Education"} onClose={() => setEduModal(null)}>
           <Field label="Title *" value={eduForm.title} onChange={(e) => setEduForm({ ...eduForm, title: e.target.value })} />
           <Field label="University *" value={eduForm.university} onChange={(e) => setEduForm({ ...eduForm, university: e.target.value })} />
@@ -479,7 +599,7 @@ export default function ProfilePage() {
       )}
 
       {/* ── Certification Modal ── */}
-      {certModal && (
+      {!readOnly && certModal && (
         <Modal title={certModal === "add" ? "Add Certification" : "Edit Certification"} onClose={() => setCertModal(null)}>
           <Field label="Title *" value={certForm.title} onChange={(e) => setCertForm({ ...certForm, title: e.target.value })} />
           <Field label="Issuer" value={certForm.issuer} onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })} />
@@ -503,7 +623,7 @@ export default function ProfilePage() {
       )}
 
       {/* ── Language Modal ── */}
-      {langModal && (
+      {!readOnly && langModal && (
         <Modal title="Add Language" onClose={() => setLangModal(null)}>
           <Field label="Language * (min 5 chars)" value={langForm.language} onChange={(e) => setLangForm({ ...langForm, language: e.target.value })} />
           <div className="mb-4">

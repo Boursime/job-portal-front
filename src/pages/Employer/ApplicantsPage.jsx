@@ -21,6 +21,15 @@ export default function ApplicantsPage() {
 
         const mappedApplicants = (res.applicants || []).map((app) => ({
           id: app.application_id,
+          candidateId:
+            app.job_seeker_id ??
+            app.jobSeekerId ??
+            app.user_id ??
+            app.userId ??
+            app.candidate_id ??
+            app.candidateId ??
+            app.id ??
+            app.application_id,
           applicationId: app.application_id,
           fullName: app.full_name,
           title: app.email,
