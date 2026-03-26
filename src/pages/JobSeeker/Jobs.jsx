@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchJobs, saveJobThunk, fetchSavedJobs } from "@/Redux/jobSeekerJobSlice";
+import { fetchJobs, saveJobThunk, fetchSavedJobs, unsaveJobThunk } from "@/Redux/jobSeekerJobSlice";
 import { useNavigate } from "react-router-dom";
 import {
   Search, MapPin, DollarSign, Bookmark, X,
@@ -46,6 +46,10 @@ export default function JobsPage() {
       limit: 6,
     }));
   }, [dispatch, debouncedSearch, debouncedLocation, selectedTypes, selectedLevels, page]);
+  
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, debouncedLocation, selectedTypes, selectedLevels]);
 
   useEffect(() => { dispatch(fetchSavedJobs()); }, [dispatch]);
 
@@ -53,7 +57,11 @@ export default function JobsPage() {
   const toggleLevel = (l) => setSelectedLevels((prev) => prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]);
   const clearFilters = () => { setSelectedTypes([]); setSelectedLevels([]); setLocation(""); setSearch(""); };
 
-  const handleSave = (jobId) => {
+  const handleSave = (jobId, isSaved) => {
+    if (isSaved) {
+      dispatch(unsaveJobThunk(jobId));
+      return;
+    }
     dispatch(saveJobThunk(jobId)).then(() => dispatch(fetchSavedJobs()));
   };
 
@@ -224,7 +232,7 @@ export default function JobsPage() {
 
                             {/* Bookmark */}
                             <button
-                              onClick={() => handleSave(job.id)}
+                              onClick={() => handleSave(job.id, isSaved)}
                               className={`shrink-0 p-1.5 rounded-lg transition-all ${isSaved ? "text-blue-600 bg-blue-50" : "text-slate-300 hover:text-blue-500 hover:bg-blue-50"}`}
                             >
                               <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} />

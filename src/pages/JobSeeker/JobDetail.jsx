@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchJobById, saveJobThunk } from "@/Redux/jobSeekerJobSlice";
+import { fetchJobById, saveJobThunk, fetchSavedJobs, unsaveJobThunk } from "@/Redux/jobSeekerJobSlice";
 import { apply } from "@/Redux/applicationSlice";
 import { fetchMyCvs } from "@/Redux/cvSlice";
 import { useParams, useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ export default function JobDetailPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
-  const { currentJob: job, loading } = useSelector((s) => s.jobSeekerJobs);
+  const { currentJob: job, loading, savedJobs = [] } = useSelector((s) => s.jobSeekerJobs);
   const { items: cvs = [] } = useSelector((s) => s.cv) || {};
   const { loading: applying, error: applyError } = useSelector((s) => s.applications);
 
@@ -20,8 +20,12 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     dispatch(fetchJobById(id));
+    dispatch(fetchSavedJobs());
     dispatch(fetchMyCvs());
   }, [dispatch, id]);
+  
+  const savedIds = savedJobs.map((s) => s.job_id || s.Job?.id);
+  const isSaved = savedIds.includes(job?.id);
 
   const handleApply = () => {
     if (!selectedCv) return;
@@ -73,10 +77,18 @@ export default function JobDetailPage() {
             </div>
             <div className="flex gap-2 shrink-0">
               <button
-                onClick={() => dispatch(saveJobThunk(job.id))}
-                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-indigo-600"
+                onClick={() => {
+                  if (isSaved) {
+                    dispatch(unsaveJobThunk(job.id));
+                    return;
+                  }
+                  dispatch(saveJobThunk(job.id)).then(() => dispatch(fetchSavedJobs()));
+                }}
+                className={`p-2 border rounded-lg hover:bg-gray-50 ${
+                  isSaved ? "border-indigo-200 bg-indigo-50 text-indigo-600" : "border-gray-200 text-gray-400 hover:text-indigo-600"
+                }`}
               >
-                <Bookmark size={16} />
+                <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} />
               </button>
               {applySuccess
                 ? <span className="px-4 py-2 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-lg">
